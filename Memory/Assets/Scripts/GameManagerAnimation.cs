@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class GameManagerAnimation : MonoBehaviour
 {
-    public GameObject mole;
+    public GameObject card;
     // Start is called before the first frame update
     void Start()
     {
@@ -14,7 +14,11 @@ public class GameManagerAnimation : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Animator anim = GetComponent<Animator>();
-            anim.SetTrigger("poow");
+        Animator reveal = GetComponent<Animator>();
+        Animator hide = GetComponent<Animator>();
+        Animator solve = GetComponent<Animator>();
+            reveal.SetTrigger("reveal");
+            hide.SetTrigger("hide");
+            solve.SetTrigger("solve");
     }
 }

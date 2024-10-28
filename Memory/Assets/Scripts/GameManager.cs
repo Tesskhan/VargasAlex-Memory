@@ -5,99 +5,156 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    public TextMeshProUGUI timer;
-    public TextMeshProUGUI congrats; 
-    public int parelles; // Les parelles de cartes que hi ha
-    public float time; // Time displayed on the screen
-    public float rest; // Randomized rest time
-    public GameObject[] cards;
+    public TextMeshProUGUI timerText;      // UI element for displaying time
+    public TextMeshProUGUI bestTimeText;   // UI element for displaying the best time
+    public TextMeshProUGUI congratsText;   // UI element for the congratulations message
+    public int pairs;                      // Number of pairs found
+    public float time;                     // Current time spent in game
+    public GameObject[] cards;             // Array of all cards
+    public Texture[] images;               // Array of images for each card
+    private float bestTime;                // Best time to complete the game
 
-    // Start is called before the first frame update
+    private Card firstCard, secondCard;    // To track the two flipped cards
+    private bool isCheckingMatch = false;  // Flag to prevent flipping more than two cards at once
+
     void Start()
     {
         cards = GameObject.FindGameObjectsWithTag("Card");
-        rest = 3f;
-        time = 0f; // Initialize time at the start
+        Debug.Log("Found " + cards.Length + " cards.");
+
+        // Verify the images array has enough pairs
+        if (images.Length < cards.Length / 2)
+        {
+            Debug.LogError("Not enough images for pairs. Ensure images array has enough entries.");
+            return;
+        }
+
+        AssignCardIDsAndTextures();  // Assign IDs and textures to the cards
+
+        pairs = 0; // Reset pairs count
+        Debug.Log("Pairs reset to 0.");
+
+        time = 0f; // Reset time
+        Debug.Log("Time reset to 0.");
+
+        // Load the best time from PlayerPrefs, default to a large value if not set
+        bestTime = PlayerPrefs.GetFloat("BestTime", float.MaxValue);
+        Debug.Log("Best time loaded: " + bestTime);
+
+        // Update the best time UI
+        if (bestTime != float.MaxValue)
+        {
+            bestTimeText.text = "Best Time: " + bestTime.ToString("F2") + "s";
+        }
+        else
+        {
+            bestTimeText.text = "Best Time: 0s";
+        }
+
+        // Hide the congratulations message at the start
+        congratsText.gameObject.SetActive(false);
     }
 
     void Update()
     {
-        // Activate cards if rest is up and no cards are currently active
-            ActivateCard();
-
-        // Decrease time
-        time = Time.deltaTime;
-        timer.text = "Time: " + time.ToString("F2") + "s";
-            
-        if (parelles == 8)
+        if (pairs < images.Length) // Game is ongoing if pairs are not completed
         {
-            GameFinish();
+            time += Time.deltaTime;
+            timerText.text = "Time: " + time.ToString("F2") + "s";
         }
-
-    }
-
-    private void ActivateCard()
-    {
-        foreach (GameObject card in cards)
+        else
         {
-            Card c = card.GetComponent<Card>();
-            // Randomly decide if this Card should be green
-            bool isGreen = UnityEngine.Random.Range(0, 2) == 0;
-            bool activated = UnityEngine.Random.Range(0, 2) == 0;
-
-            c.ActivateCard(isGreen, activated); // Activate the Card
+            Debug.Log("All pairs found! Calling GameFinish.");
+            GameFinish();
         }
     }
 
     private void GameFinish()
     {
-        congrats.text = "Congratulations";
-        Time.timeScale = 0;
+        congratsText.text = "Congratulations!";
+        congratsText.gameObject.SetActive(true);
 
-        // Deactivate all cards
-        foreach (GameObject card in cards)
+        Time.timeScale = 0;  // Pause the game
+        if (time < bestTime)
         {
-            card.SetActive(false);
-        }
-
-        if (Input.GetKeyDown(KeyCode.A))
-        {
-            RestartGame();
+            bestTime = time;
+            PlayerPrefs.SetFloat("BestTime", bestTime);
+            PlayerPrefs.Save();
+            bestTimeText.text = "Best Time: " + bestTime.ToString("F2") + "s";
         }
     }
 
-    // Method to handle what happens when a card is hit
-    public void onCardPick(GameObject face, int green)
+    private void AssignCardIDsAndTextures()
     {
-        // Check if the clicked card is green and update the score
-        if (face.GetComponent<MeshRenderer>().material.color.Equals(Color.green))
+        List<int> idList = new List<int>();
+        for (int i = 0; i < images.Length; i++)
         {
-            // puntuatge += 1; // Increment score for hitting green
+            idList.Add(i); // Add ID once for each pair
+            idList.Add(i); 
+        }
+        idList = ShuffleList(idList);
+
+        for (int i = 0; i < cards.Length; i++)
+        {
+            int cardID = idList[i];
+            Card cardComponent = cards[i].GetComponent<Card>();
+            cardComponent.id = cardID;
+
+            Renderer renderer = cards[i].GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.mainTexture = images[cardID]; // Assign texture based on ID
+            }
+        }
+        Debug.Log("All IDs and textures assigned.");
+    }
+
+    private List<int> ShuffleList(List<int> list)
+    {
+        for (int i = 0; i < list.Count; i++)
+        {
+            int temp = list[i];
+            int randomIndex = Random.Range(i, list.Count);
+            list[i] = list[randomIndex];
+            list[randomIndex] = temp;
+        }
+        return list;
+    }
+
+    public void CardClicked(Card clickedCard)
+    {
+        if (isCheckingMatch) return;
+
+        if (firstCard == null)
+        {
+            firstCard = clickedCard;
         }
         else
         {
-            // puntuatge -= 1; // Decrement score for hitting red
+            secondCard = clickedCard;
+            isCheckingMatch = true;
+            CheckForMatch();
         }
-
     }
 
-    // Restart the game
-    public void RestartGame()
+    private void CheckForMatch()
     {
-        // Reset the game variables
-        time = 0f;  // Set initial game time
-
-        // Re-enable the cards
-        foreach (GameObject card in cards)
+        if (firstCard.id == secondCard.id)
         {
-            card.SetActive(true);
+            pairs++;
+            firstCard.isSolved = true;
+            secondCard.isSolved = true;
+            firstCard.SolveCard();
+            secondCard.SolveCard();
+        }
+        else
+        {
+            firstCard.HideCard();
+            secondCard.HideCard();
         }
 
-        // Resume the game
-        Time.timeScale = 1;
+        firstCard = null;
+        secondCard = null;
+        isCheckingMatch = false;
     }
-}
-
-public class TextMeshProGUI
-{
 }

@@ -640,12 +640,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2cfded3f009ca804eb7a762a67454c3f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  timer: {fileID: 0}
-  congrats: {fileID: 1203071953}
-  parelles: 0
+  timerText: {fileID: 263780565}
+  bestTimeText: {fileID: 1405486113}
+  congratsText: {fileID: 1203071953}
+  pairs: 0
   time: 0
-  rest: 0
   cards: []
+  images:
+  - {fileID: 2800000, guid: 7183f6df425a60647b3c7e398d6d854b, type: 3}
+  - {fileID: 2800000, guid: ccb8e21ad4af35a4ba1cbf691e2b24fe, type: 3}
+  - {fileID: 2800000, guid: 1a4fe3ed85797e84284212dc24cdf87e, type: 3}
+  - {fileID: 2800000, guid: 740302fb81c734045bab8afc398ba3ee, type: 3}
+  - {fileID: 2800000, guid: f6eb160d3ac1cbc4d8402c482cebc2fb, type: 3}
+  - {fileID: 2800000, guid: 9d45a000b59d99e4289376f19a93bcee, type: 3}
+  - {fileID: 2800000, guid: 98047855d90422d4d89a9268aaba2ca0, type: 3}
+  - {fileID: 2800000, guid: 9d8e975d9419ffe409d2a36afe6a64c1, type: 3}
 --- !u!4 &467378018
 Transform:
   m_ObjectHideFlags: 0
@@ -655,7 +664,7 @@ Transform:
   m_GameObject: {fileID: 467378016}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 8, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

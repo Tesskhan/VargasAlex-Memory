@@ -3,69 +3,53 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Card : MonoBehaviour
-{
-    private int green;
-    private GameObject gm;
-    public GameObject face;
+{   
+    private GameManager gm;  // Reference to GameManager
+    public int id;           // Unique ID for each card (shared by pairs)
+
+    public bool isSolved = false; // Flag to track if this card has been solved
 
     void Start()
     {
-        gm = GameObject.FindGameObjectWithTag("GameController");
+        gm = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
     }
 
     void OnMouseDown()
     {
-        if (face.activeSelf)
+        // Only allow clicking if the card is not already solved and is currently active (visible)
+        if (!isSolved && gameObject.activeSelf) 
         {
-            TriggerSmash();
+            // Notify GameManager that this card has been clicked
+            gm.CardClicked(this);
+
+            // Trigger the reveal animation
+            Animator reveal = gameObject.GetComponent<Animator>();
+            reveal.SetTrigger("reveal");
         }
     }
 
-    public void ActivateCard(bool isGreen, bool activated)
+    public void HideCard()
     {
-        if (activated)
-        {
-            face.SetActive(true); // Show the face
-
-            // Set the color based on the isGreen value passed in
-            if (isGreen)
-            {
-                face.GetComponent<Renderer>().material.color = Color.green;
-                green = 1;
-            }
-            else
-            {
-                face.GetComponent<Renderer>().material.color = Color.red;
-                green = 0;
-            }
-        }
+         // Trigger the "hide" animation on both matched cards
+            Animator hide = gameObject.GetComponent<Animator>();
+            hide.SetTrigger("hide");
+            
+            Debug.Log("HideCard called on Card ID: " + id);
     }
 
-    private void TriggerSmash()
+    public void SolveCard()
     {
-        if (gm != null)
-        {
-            GameManager gmScript = gm.GetComponent<GameManager>();
-            Animator anim = face.GetComponent<Animator>();
-
-            anim.SetTrigger("smash"); // Trigger the smash animation
-
-            // Start coroutine to deactivate the face after the animation is complete
-            StartCoroutine(DeactivatefaceAfterAnimation(anim));
-
-            if (gmScript != null)
-            {
-                gmScript.onCardPick(face, green); // Call the GameManager's method
-                green = 0;
-            }
-        }
+         // Trigger the "hide" animation on both matched cards
+            Animator solve = gameObject.GetComponent<Animator>();
+            solve.SetTrigger("solve");
+            
+            Debug.Log("Both cards have coincident ID: " + id);
     }
 
-    private IEnumerator DeactivatefaceAfterAnimation(Animator anim)
+    // Method to prevent further clicks
+    public void SetClickable(bool clickable)
     {
-        // Wait for the duration of the animation
-        yield return new WaitForSeconds(anim.GetCurrentAnimatorStateInfo(0).length);
-
-        face.SetActive(false); // Deactivate face after animation
+        // Disable/Enable the card's collider to prevent further clicks
+        GetComponent<Collider>().enabled = clickable;
     }
 }
