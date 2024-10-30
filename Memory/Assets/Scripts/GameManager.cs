@@ -133,6 +133,7 @@ public class GameManager : MonoBehaviour
         {
             secondCard = clickedCard;
             isCheckingMatch = true;
+            
             CheckForMatch();
         }
     }
