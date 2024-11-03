@@ -2,70 +2,92 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
-    public TextMeshProUGUI timerText;      // UI element for displaying time
-    public TextMeshProUGUI bestTimeText;   // UI element for displaying the best time
-    public TextMeshProUGUI congratsText;   // UI element for the congratulations message
-    public int pairs;                      // Number of pairs found
-    public float time;                     // Current time spent in game
-    public GameObject[] cards;             // Array of all cards
-    public Texture[] images;               // Array of images for each card
-    private float bestTime;                // Best time to complete the game
+    public TextMeshProUGUI timerText;       // UI element for displaying time
+    public TextMeshProUGUI bestTimeText;    // UI element for displaying the best time
+    public TextMeshProUGUI guessesText;     // UI element for displaying the number of guesses
+    public TextMeshProUGUI congratsText;    // UI element for the congratulations message
+    public TextMeshProUGUI memoryText;      // UI element for the memory title or instructions
+    public Button startButton;              // UI element for the start button
+    public int pairs;                       // Number of pairs found
+    public float time;                      // Current time spent in game
+    public GameObject[] cards;              // Array of all cards
+    public Texture[] images;                // Array of images for each card
+    private float bestTime;                 // Best time to complete the game
+    private int guessCount;                 // Counter for the number of guesses
 
-    private Card firstCard, secondCard;    // To track the two flipped cards
-    private bool isCheckingMatch = false;  // Flag to prevent flipping more than two cards at once
+    private Card firstCard, secondCard;     // To track the two flipped cards
+    private bool isCheckingMatch = false;   // Flag to prevent flipping more than two cards at once
+    private bool gameStarted = false;       // Flag to track if the game has started
 
     void Start()
     {
+        // Initialize cards and images
         cards = GameObject.FindGameObjectsWithTag("Card");
-        Debug.Log("Found " + cards.Length + " cards.");
 
         // Verify the images array has enough pairs
         if (images.Length < cards.Length / 2)
         {
-            Debug.LogError("Not enough images for pairs. Ensure images array has enough entries.");
             return;
         }
 
         AssignCardIDsAndTextures();  // Assign IDs and textures to the cards
 
-        pairs = 0; // Reset pairs count
-        Debug.Log("Pairs reset to 0.");
+        // Reset pairs count, time, and guess count
+        pairs = 0;
+        time = 0f;
+        guessCount = 0;  // Initialize guess counter
 
-        time = 0f; // Reset time
-        Debug.Log("Time reset to 0.");
+        // Display initial guess count
+        guessesText.text = "Guesses: 0";
 
         // Load the best time from PlayerPrefs, default to a large value if not set
         bestTime = PlayerPrefs.GetFloat("BestTime", float.MaxValue);
-        Debug.Log("Best time loaded: " + bestTime);
+        bestTimeText.text = bestTime != float.MaxValue ? 
+        "Best Time: " + bestTime.ToString("F2") + "s" : "Best Time: 0s";
 
-        // Update the best time UI
-        if (bestTime != float.MaxValue)
-        {
-            bestTimeText.text = "Best Time: " + bestTime.ToString("F2") + "s";
-        }
-        else
-        {
-            bestTimeText.text = "Best Time: 0s";
-        }
-
-        // Hide the congratulations message at the start
+        // Hide the congratulations message and set the memory title text
         congratsText.gameObject.SetActive(false);
+
+        // Set up the start button
+        startButton.gameObject.SetActive(true);
+        startButton.onClick.AddListener(StartGame);
+
+        // Deactivate all cards initially and display memory title
+        foreach (GameObject card in cards)
+        {
+            card.SetActive(false);
+        }
+        memoryText.gameObject.SetActive(true); // Ensure memory title is visible initially
     }
 
     void Update()
     {
-        if (pairs < images.Length) // Game is ongoing if pairs are not completed
+        if (gameStarted && pairs < images.Length) // Game is ongoing if pairs are not completed
         {
             time += Time.deltaTime;
             timerText.text = "Time: " + time.ToString("F2") + "s";
         }
-        else
+        else if (pairs >= images.Length) // All pairs found
         {
             Debug.Log("All pairs found! Calling GameFinish.");
-            GameFinish();
+            Invoke(nameof(GameFinish), 3f);
+        }
+    }
+
+    private void StartGame()
+    {
+        gameStarted = true;
+        startButton.gameObject.SetActive(false); // Hide start button once game begins
+        memoryText.gameObject.SetActive(false);  // Hide memory title once game begins
+
+        // Activate all cards at game start
+        foreach (GameObject card in cards)
+        {
+            card.SetActive(true);
         }
     }
 
@@ -106,7 +128,6 @@ public class GameManager : MonoBehaviour
                 renderer.material.mainTexture = images[cardID]; // Assign texture based on ID
             }
         }
-        Debug.Log("All IDs and textures assigned.");
     }
 
     private List<int> ShuffleList(List<int> list)
@@ -123,7 +144,7 @@ public class GameManager : MonoBehaviour
 
     public void CardClicked(Card clickedCard)
     {
-        if (isCheckingMatch) return;
+        if (!gameStarted || isCheckingMatch) return;
 
         if (firstCard == null)
         {
@@ -133,6 +154,10 @@ public class GameManager : MonoBehaviour
         {
             secondCard = clickedCard;
             isCheckingMatch = true;
+            
+            // Increment guess count as two cards are being checked
+            guessCount++;
+            guessesText.text = "Guesses: " + guessCount;  // Update the UI with the current guess count
             
             CheckForMatch();
         }
@@ -145,13 +170,14 @@ public class GameManager : MonoBehaviour
             pairs++;
             firstCard.isSolved = true;
             secondCard.isSolved = true;
-            firstCard.SolveCard();
+
             secondCard.SolveCard();
+            firstCard.SolveCard();
         }
         else
         {
-            firstCard.HideCard();
             secondCard.HideCard();
+            firstCard.HideCard();
         }
 
         firstCard = null;
