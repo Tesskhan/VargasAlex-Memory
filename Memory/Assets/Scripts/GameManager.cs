@@ -11,46 +11,51 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI guessesText;     // UI element for displaying the number of guesses
     public TextMeshProUGUI congratsText;    // UI element for the congratulations message
     public TextMeshProUGUI memoryText;      // UI element for the memory title or instructions
-    public Button startButton;              // UI element for the start button
-    public int pairs;                       // Number of pairs found
-    public float time;                      // Current time spent in game
-    public GameObject[] cards;              // Array of all cards
-    public Texture[] images;                // Array of images for each card
-    private float bestTime;                 // Best time to complete the game
-    private int guessCount;                 // Counter for the number of guesses
+    public TextMeshProUGUI newBestTimeText; // UI element for the new best time message
+    public Button startButton;               // UI element for the start button
+    public int pairs;                        // Number of pairs found
+    public float time;                       // Current time spent in game
+    public GameObject[] cards;               // Array of all cards
+    public Texture[] images;                 // Array of images for each card
+    private float bestTime;                  // Best time to complete the game
+    private int guessCount;                  // Counter for the number of guesses
 
-    private Card firstCard, secondCard;     // To track the two flipped cards
-    private bool isCheckingMatch = false;   // Flag to prevent flipping more than two cards at once
-    private bool gameStarted = false;       // Flag to track if the game has started
+    private Card firstCard, secondCard;      // To track the two flipped cards
+    private bool isCheckingMatch = false;    // Flag to prevent flipping more than two cards at once
+    private bool gameStarted = false;        // Flag to track if the game has started
 
     void Start()
     {
-        // Initialize cards and images
+        // Find and initialize all cards by tag
         cards = GameObject.FindGameObjectsWithTag("Card");
 
-        // Verify the images array has enough pairs
+        // Verify that we have enough images for the number of card pairs
         if (images.Length < cards.Length / 2)
         {
+            Debug.LogWarning("Insufficient images provided for pairs of cards.");
             return;
         }
 
         AssignCardIDsAndTextures();  // Assign IDs and textures to the cards
 
-        // Reset pairs count, time, and guess count
+        // Reset pairs count, timer, and guess count for a new game
         pairs = 0;
         time = 0f;
-        guessCount = 0;  // Initialize guess counter
+        guessCount = 0;
 
-        // Display initial guess count
+        // Display initial UI text
         guessesText.text = "Guesses: 0";
 
-        // Load the best time from PlayerPrefs, default to a large value if not set
+        // Load and display best time
         bestTime = PlayerPrefs.GetFloat("BestTime", float.MaxValue);
         bestTimeText.text = bestTime != float.MaxValue ? 
-        "Best Time: " + bestTime.ToString("F2") + "s" : "Best Time: 0s";
+            "Best Time: " + bestTime.ToString("F2") + "s" : "Best Time: 0s";
 
         // Hide the congratulations message and set the memory title text
         congratsText.gameObject.SetActive(false);
+        
+        // Hide the new best time message at the beginning
+        newBestTimeText.gameObject.SetActive(false);
 
         // Set up the start button
         startButton.gameObject.SetActive(true);
@@ -61,7 +66,7 @@ public class GameManager : MonoBehaviour
         {
             card.SetActive(false);
         }
-        memoryText.gameObject.SetActive(true); // Ensure memory title is visible initially
+        memoryText.gameObject.SetActive(true);
     }
 
     void Update()
@@ -89,6 +94,8 @@ public class GameManager : MonoBehaviour
         {
             card.SetActive(true);
         }
+
+        Debug.Log("Game started.");
     }
 
     private void GameFinish()
@@ -97,23 +104,32 @@ public class GameManager : MonoBehaviour
         congratsText.gameObject.SetActive(true);
 
         Time.timeScale = 0;  // Pause the game
+
+        // Check if the current time is a new best time
         if (time < bestTime)
         {
             bestTime = time;
             PlayerPrefs.SetFloat("BestTime", bestTime);
             PlayerPrefs.Save();
             bestTimeText.text = "Best Time: " + bestTime.ToString("F2") + "s";
+            newBestTimeText.text = "New Best Time!";
+            newBestTimeText.gameObject.SetActive(true); // Show the new best time message
+            Debug.Log("New best time achieved!");
         }
     }
 
     private void AssignCardIDsAndTextures()
     {
         List<int> idList = new List<int>();
+
+        // Prepare list of IDs for pairs
         for (int i = 0; i < images.Length; i++)
         {
-            idList.Add(i); // Add ID once for each pair
+            idList.Add(i);
             idList.Add(i); 
         }
+        
+        // Shuffle IDs and assign them to cards
         idList = ShuffleList(idList);
 
         for (int i = 0; i < cards.Length; i++)
@@ -125,9 +141,10 @@ public class GameManager : MonoBehaviour
             Renderer renderer = cards[i].GetComponent<Renderer>();
             if (renderer != null)
             {
-                renderer.material.mainTexture = images[cardID]; // Assign texture based on ID
+                renderer.material.mainTexture = images[cardID];
             }
         }
+        Debug.Log("Card IDs and textures assigned.");
     }
 
     private List<int> ShuffleList(List<int> list)
@@ -154,34 +171,53 @@ public class GameManager : MonoBehaviour
         {
             secondCard = clickedCard;
             isCheckingMatch = true;
-            
+
             // Increment guess count as two cards are being checked
             guessCount++;
-            guessesText.text = "Guesses: " + guessCount;  // Update the UI with the current guess count
-            
+            guessesText.text = "Guesses: " + guessCount;
             CheckForMatch();
         }
     }
 
     private void CheckForMatch()
     {
+        SetAllCardsClickable(false); // Disable all card clicks during animation
+
         if (firstCard.id == secondCard.id)
         {
             pairs++;
             firstCard.isSolved = true;
             secondCard.isSolved = true;
 
-            secondCard.SolveCard();
             firstCard.SolveCard();
+            secondCard.SolveCard();
         }
         else
         {
-            secondCard.HideCard();
             firstCard.HideCard();
+            secondCard.HideCard();
         }
+
+        // Wait for animations to finish, then re-enable cards
+        StartCoroutine(ReEnableCardClicksAfterAnimation());
 
         firstCard = null;
         secondCard = null;
         isCheckingMatch = false;
+    }
+
+    private IEnumerator ReEnableCardClicksAfterAnimation()
+    {
+        yield return new WaitForSeconds(1.5f); // Adjust if animations have different lengths
+        SetAllCardsClickable(true);
+    }
+
+    public void SetAllCardsClickable(bool clickable)
+    {
+        foreach (GameObject card in cards)
+        {
+            Card cardComponent = card.GetComponent<Card>();
+            cardComponent.SetClickable(clickable);
+        }
     }
 }

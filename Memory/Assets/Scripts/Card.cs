@@ -39,21 +39,25 @@ public class Card : MonoBehaviour
     {
         animator.SetTrigger("hide");  // Trigger hide animation
         StartCoroutine(EnableColliderAfterAnimation()); // Re-enable collider after animation
-        Debug.Log("HideCard called on Card ID: " + id);
     }
 
     public void SolveCard()
     {
         animator.SetTrigger("solve"); // Trigger solve animation
         SetClickable(false);          // Disable collider permanently as solved
-        Debug.Log("SolveCard called on Card ID: " + id);
     }
 
     private IEnumerator EnableColliderAfterAnimation()
     {
         yield return new WaitForSeconds(1f); // Adjust delay if needed to match animation length
-        SetClickable(true);                  // Re-enable collider after hiding
+
+        // Only re-enable if the card is not solved
+        if (!isSolved)
+        {
+            SetClickable(true);
+        }
     }
+
 
     public void SetClickable(bool clickable)
     {
