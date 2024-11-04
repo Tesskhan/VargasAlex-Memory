@@ -23,6 +23,8 @@ public class GameManager : MonoBehaviour
     private Card firstCard, secondCard;      // To track the two flipped cards
     private bool isCheckingMatch = false;    // Flag to prevent flipping more than two cards at once
     private bool gameStarted = false;        // Flag to track if the game has started
+    public AudioSource src;
+    public AudioClip intro, correct, wrong, ending, bestEnding;
 
     void Start()
     {
@@ -85,6 +87,8 @@ public class GameManager : MonoBehaviour
 
     private void StartGame()
     {
+        src.clip = intro;
+        src.Play();
         gameStarted = true;
         startButton.gameObject.SetActive(false); // Hide start button once game begins
         memoryText.gameObject.SetActive(false);  // Hide memory title once game begins
@@ -100,6 +104,8 @@ public class GameManager : MonoBehaviour
 
     private void GameFinish()
     {
+        src.clip = ending;
+        src.Play();
         congratsText.text = "Congratulations!";
         congratsText.gameObject.SetActive(true);
 
@@ -108,6 +114,8 @@ public class GameManager : MonoBehaviour
         // Check if the current time is a new best time
         if (time < bestTime)
         {
+            src.clip = bestEnding;
+            src.Play();
             bestTime = time;
             PlayerPrefs.SetFloat("BestTime", bestTime);
             PlayerPrefs.Save();
@@ -180,30 +188,44 @@ public class GameManager : MonoBehaviour
     }
 
     private void CheckForMatch()
+{
+    SetAllCardsClickable(false); // Disable all card clicks during animation
+
+    if (firstCard.id == secondCard.id)
     {
-        SetAllCardsClickable(false); // Disable all card clicks during animation
+        pairs++;
+        firstCard.isSolved = true;
+        secondCard.isSolved = true;
 
-        if (firstCard.id == secondCard.id)
-        {
-            pairs++;
-            firstCard.isSolved = true;
-            secondCard.isSolved = true;
+        // Start coroutine to play the correct sound with a delay
+        StartCoroutine(PlaySoundWithDelay(correct, 0.75f));
+       
+        firstCard.SolveCard();
+        secondCard.SolveCard();
+    }
+    else
+    {
+        // Start coroutine to play the wrong sound with a delay
+        StartCoroutine(PlaySoundWithDelay(wrong, 0.75f));
 
-            firstCard.SolveCard();
-            secondCard.SolveCard();
-        }
-        else
-        {
-            firstCard.HideCard();
-            secondCard.HideCard();
-        }
+        firstCard.HideCard();
+        secondCard.HideCard();
+    }
 
-        // Wait for animations to finish, then re-enable cards
-        StartCoroutine(ReEnableCardClicksAfterAnimation());
+    // Wait for animations to finish, then re-enable cards
+    StartCoroutine(ReEnableCardClicksAfterAnimation());
 
-        firstCard = null;
-        secondCard = null;
-        isCheckingMatch = false;
+    firstCard = null;
+    secondCard = null;
+    isCheckingMatch = false;
+}
+
+    // Coroutine to play a sound with a specified delay
+    private IEnumerator PlaySoundWithDelay(AudioClip clip, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        src.clip = clip;
+        src.Play();
     }
 
     private IEnumerator ReEnableCardClicksAfterAnimation()

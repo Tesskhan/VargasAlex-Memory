@@ -228,6 +228,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 0
   isSolved: 0
+  src: {fileID: 0}
+  flip: {fileID: 8300000, guid: 11a150fcb240c834aa8978d04a70e59f, type: 3}
 --- !u!95 &6351486202949965617
 Animator:
   serializedVersion: 5

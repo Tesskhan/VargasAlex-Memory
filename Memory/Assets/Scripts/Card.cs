@@ -6,7 +6,7 @@ public class Card : MonoBehaviour
     private GameManager gm;       // Reference to GameManager
     public int id;                // Unique ID for each card (shared by pairs)
     public bool isSolved = false; // Flag to track if this card has been solved
-
+    public AudioClip flip;
     private Animator animator;
     private Collider cardCollider;
 
@@ -29,6 +29,9 @@ public class Card : MonoBehaviour
         if (!isSolved && cardCollider.enabled) // Ensure collider is enabled
         {
             gm.CardClicked(this); // Notify GameManager
+
+            gm.src.clip = flip;
+            gm.src.Play();
 
             animator.SetTrigger("reveal"); // Trigger reveal animation
             SetClickable(false);           // Disable collider while revealing
