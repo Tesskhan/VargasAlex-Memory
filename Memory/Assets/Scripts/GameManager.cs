@@ -31,13 +31,6 @@ public class GameManager : MonoBehaviour
         // Find and initialize all cards by tag
         cards = GameObject.FindGameObjectsWithTag("Card");
 
-        // Verify that we have enough images for the number of card pairs
-        if (images.Length < cards.Length / 2)
-        {
-            Debug.LogWarning("Insufficient images provided for pairs of cards.");
-            return;
-        }
-
         AssignCardIDsAndTextures();  // Assign IDs and textures to the cards
 
         // Reset pairs count, timer, and guess count for a new game
@@ -188,37 +181,37 @@ public class GameManager : MonoBehaviour
     }
 
     private void CheckForMatch()
-{
-    SetAllCardsClickable(false); // Disable all card clicks during animation
-
-    if (firstCard.id == secondCard.id)
     {
-        pairs++;
-        firstCard.isSolved = true;
-        secondCard.isSolved = true;
+        SetAllCardsClickable(false); // Disable all card clicks during animation
 
-        // Start coroutine to play the correct sound with a delay
-        StartCoroutine(PlaySoundWithDelay(correct, 0.75f));
-       
-        firstCard.SolveCard();
-        secondCard.SolveCard();
+        if (firstCard.id == secondCard.id)
+        {
+            pairs++;
+            firstCard.isSolved = true;
+            secondCard.isSolved = true;
+
+            // Start coroutine to play the correct sound with a delay
+            StartCoroutine(PlaySoundWithDelay(correct, 0.75f));
+        
+            firstCard.SolveCard();
+            secondCard.SolveCard();
+        }
+        else
+        {
+            // Start coroutine to play the wrong sound with a delay
+            StartCoroutine(PlaySoundWithDelay(wrong, 0.75f));
+
+            firstCard.HideCard();
+            secondCard.HideCard();
+        }
+
+        // Wait for animations to finish, then re-enable cards
+        StartCoroutine(ReEnableCardClicksAfterAnimation());
+
+        firstCard = null;
+        secondCard = null;
+        isCheckingMatch = false;
     }
-    else
-    {
-        // Start coroutine to play the wrong sound with a delay
-        StartCoroutine(PlaySoundWithDelay(wrong, 0.75f));
-
-        firstCard.HideCard();
-        secondCard.HideCard();
-    }
-
-    // Wait for animations to finish, then re-enable cards
-    StartCoroutine(ReEnableCardClicksAfterAnimation());
-
-    firstCard = null;
-    secondCard = null;
-    isCheckingMatch = false;
-}
 
     // Coroutine to play a sound with a specified delay
     private IEnumerator PlaySoundWithDelay(AudioClip clip, float delay)

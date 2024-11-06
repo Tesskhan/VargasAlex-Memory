@@ -799,7 +799,7 @@ MonoBehaviour:
   - {fileID: 2800000, guid: 9d8e975d9419ffe409d2a36afe6a64c1, type: 3}
   src: {fileID: 1058195246}
   intro: {fileID: 8300000, guid: d2824b53f907f2f429c41f1493bad9c6, type: 3}
-  correct: {fileID: 8300000, guid: f45fd51bc0cb0254ebc2f4805ea6d85d, type: 3}
+  correct: {fileID: 0}
   wrong: {fileID: 8300000, guid: ba60e0107d5aee645894e0a5bdcd8998, type: 3}
   ending: {fileID: 8300000, guid: 7a8d17018a5ed1140a66e92f5123a6ab, type: 3}
   bestEnding: {fileID: 8300000, guid: 68bdbb3becf97134895edec4a1352f8e, type: 3}

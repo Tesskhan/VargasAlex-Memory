@@ -15,12 +15,6 @@ public class Card : MonoBehaviour
         gm = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
         animator = gameObject.GetComponent<Animator>();
         cardCollider = gameObject.GetComponent<Collider>();
-
-        if (cardCollider == null)
-        {
-            Debug.LogError("Collider missing on card with ID: " + id);
-        }
-        
         SetClickable(true); // Make sure the card is clickable at the start
     }
 
@@ -35,26 +29,37 @@ public class Card : MonoBehaviour
 
             animator.SetTrigger("reveal"); // Trigger reveal animation
             SetClickable(false);           // Disable collider while revealing
+            isSolved = true;
         }
     }
 
     public void HideCard()
     {
-        animator.SetTrigger("hide");  // Trigger hide animation
-        StartCoroutine(EnableColliderAfterAnimation()); // Re-enable collider after animation
+        StartCoroutine(EnableColliderAfterAnimation(true)); // Re-enable collider after animation
     }
 
     public void SolveCard()
     {
-        animator.SetTrigger("solve"); // Trigger solve animation
-        SetClickable(false);          // Disable collider permanently as solved
+        StartCoroutine(EnableColliderAfterAnimation(false)); // Re-enable collider after animation
     }
 
-    private IEnumerator EnableColliderAfterAnimation()
+    private IEnumerator EnableColliderAfterAnimation(bool correct)
     {
-        yield return new WaitForSeconds(1f); // Adjust delay if needed to match animation length
+        yield return new WaitForSeconds(1.5f); // Adjust delay if needed to match animation length
 
-        // Only re-enable if the card is not solved
+        if (correct)
+        {
+            animator.SetTrigger("hide");
+            isSolved = false;  
+        }
+        else if (!correct)
+        {
+            animator.SetTrigger("solve");
+            isSolved = true;
+        }
+
+        yield return new WaitForSeconds(0.5f); // Adjust delay if needed to match animation length
+        
         if (!isSolved)
         {
             SetClickable(true);
@@ -67,7 +72,6 @@ public class Card : MonoBehaviour
         if (cardCollider != null)
         {
             cardCollider.enabled = clickable;
-            Debug.Log("Card ID: " + id + " collider set to " + clickable);
         }
     }
 }
